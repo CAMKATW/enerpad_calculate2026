@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f19" />
+  <title>Enerpad AC 行動電源使用時間試算</title>
+  <style>
+    :root{
+      --bg:#0b0f19; --card:#121829; --muted:#9aa4b2; --accent:#3d8bff; --accent-hover:#2f78e6;
+      --field:#1a2238; --stroke:#1f2a44; --warn:#ff5c5c; --text:#e6edf7; --highlight:#ffcc00;
+    }
+    body{font-family:Arial,system-ui,-apple-system,"Noto Sans TC",sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:flex-start;min-height:100vh;margin:0;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));box-sizing:border-box;font-size:16px;line-height:1.5}
+    .container{background:var(--card);padding:24px;border-radius:16px;width:100%;max-width:clamp(340px,92vw,560px);box-shadow:0 6px 24px rgba(0,0,0,.55);border:1px solid var(--stroke);box-sizing:border-box}
+    h2{text-align:center;margin:0 0 16px;color:var(--accent);font-size:clamp(20px,2.6vw,24px);line-height:1.35}
+    label{display:block;margin:10px 0 6px;font-size:14px;white-space:normal;text-align:left}
+    select,input[type=number],input[readonly]{width:100%;padding:12px;border-radius:12px;border:1px solid var(--stroke);background:var(--field);color:var(--text);margin-bottom:10px;font-size:16px;outline:none;box-sizing:border-box}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;margin-left:6px;border:1px solid var(--stroke);background:#0f1729;color:#cfe0ff}
+    .badge-ups{background:#4a1920;color:#ffd1d6;border-color:#7a2b38}
+    .badge-pd{background:#102131;color:#b9f6ff;border-color:#2a4b6b}
+    .badge-plane{background:#10281a;color:#b7ffbf;border-color:#2b5f3a}
+    .badge-check{background:#3b250a;color:#ffdca8;border-color:#6e481b}
+    .spec-box{background:var(--field);padding:12px;border-radius:12px;border:1px solid var(--stroke);font-size:14px;margin-bottom:10px}
+    .spec-box strong{color:var(--accent)}
+    .actions{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+    @media(min-width:480px){.actions{flex-direction:row}}
+    button{flex:1;padding:12px;border:none;border-radius:12px;cursor:pointer;font-size:16px;box-sizing:border-box}
+    .calculate{background:var(--accent);color:#fff;font-weight:700}
+    .calculate:hover{background:var(--accent-hover)}
+    .reset{background:#0f1729;color:#e6edf7;border:1px solid var(--stroke)}
+    .reset:hover{background:#0d1422}
+    .result{margin-top:14px;padding:14px;border-radius:12px;background:var(--field);text-align:left;border:1px solid var(--stroke);box-sizing:border-box;word-break:break-word}
+    .result strong{color:var(--accent)}
+    .highlight{font-weight:700;color:var(--highlight)}
+    .limit{display:none;margin-top:6px;padding:10px;background:rgba(255,92,92,.12);color:#ffd5d5;border:1px solid rgba(255,92,92,.45);border-radius:12px;font-weight:700;text-align:left;box-sizing:border-box;word-break:break-word}
+    details{margin-top:14px;background:var(--field);padding:12px;border-radius:12px;border:1px solid var(--stroke);box-sizing:border-box}
+    summary{cursor:pointer;font-weight:700;color:var(--accent);display:flex;align-items:center}
+    summary::before{content:'＋';margin-right:6px;transition:transform .2s}
+    details[open] summary::before{content:'－'}
+    summary:hover{color:var(--accent-hover)}
+    .panel{overflow:hidden;max-height:0;transition:max-height 280ms ease}
+    
+    /* 教學按鈕與實體標籤樣式 */
+    .spec-teaching-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #1c3561 0%, #29559c 100%);
+      color: #d1e4ff;
+      border: 1px solid #3d8bff;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(61, 139, 255, 0.15);
+      animation: gentlePulse 2.5s infinite;
+    }
+    .spec-teaching-btn:hover {
+      background: linear-gradient(135deg, #29559c 0%, #3d8bff 100%);
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(61, 139, 255, 0.3);
+    }
+    @keyframes gentlePulse {
+      0% { box-shadow: 0 0 0 0 rgba(61, 139, 255, 0.5); }
+      70% { box-shadow: 0 0 0 8px rgba(61, 139, 255, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(61, 139, 255, 0); }
+    }
+    .spec-label-container {
+      display: none;
+      margin-bottom: 16px;
+      animation: fadeIn 0.35s ease;
+    }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);} }
+    .spec-sticker {
+      background: #e9ecef; /* 模擬真實貼紙顏色 */
+      color: #111;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .spec-sticker h4 { 
+      margin: 0 0 10px 0; 
+      border-bottom: 2px solid #666; 
+      padding-bottom: 4px; 
+      font-weight: 900; 
+      text-align: center; 
+      letter-spacing: 1px;
+    }
+    .spec-line { margin-bottom: 6px; font-weight: bold;}
+    .spec-highlight {
+      background: #ffcc00;
+      color: #000;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 2px solid #e65c00;
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 15px;
+    }
+    .spec-watt-badge {
+      display: inline-block;
+      margin-left: 6px;
+      font-size: 15px;
+      font-weight: 900;
+      color: #d32f2f;
+      border: 2px solid #d32f2f;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(211, 47, 47, 0.08);
+      transform: translateY(2px);
+    }
+    .spec-teaching-text {
+      background: var(--field);
+      color: var(--text);
+      padding: 14px;
+      border-radius: 12px;
+      margin-top: 10px;
+      border: 1px solid var(--stroke);
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+    }
+    .spec-formula {
+      background: rgba(255, 204, 0, 0.12);
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px dashed rgba(255, 204, 0, 0.5);
+      margin-top: 10px;
+      color: #ffdca8;
+      text-align: center;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Enerpad AC 行動電源<br/>使用時間試算</h2>
+
+    <label for="model">選擇型號：</label>
+    <select id="model">
+      <!-- 移除括號後的選單項目 -->
+      <option value="MD27KD">MD-27KD</option>
+      <option value="AC27KD">AC-27KD</option>
+      <option value="MD40KD">MD-40KD</option>
+      <option value="AC40K">AC-40K</option>
+      <option value="MD42K">MD-42K</option>
+      <option value="UPS55K">UPS-55K</option>
+      <option value="MD80K">MD-80K</option>
+      <option value="AC160K">AC-160K</option>
+    </select>
+
+    <div id="specBox" class="spec-box">請選擇型號以查看規格</div>
+
+    <label for="capacity">容量（Wh）</label>
+    <input id="capacity" type="number" readonly />
+    <div class="hint" style="font-size:12px;color:var(--muted);margin-top:-6px;">由型號自動帶入。</div>
+
+    <label for="power">輸入預計使用的電器功率 (W)</label>
+    <input type="number" id="power" placeholder="例如 65" inputmode="decimal" step="0.1" />
+
+    <!-- 規格教學按鈕 -->
+    <button type="button" class="spec-teaching-btn" onclick="toggleSpecDemo()">
+      💡 我要怎麼看電器規格了解耗電？
+    </button>
+
+    <!-- 實體標籤教學區塊 (預設隱藏) -->
+    <div id="specDemo" class="spec-label-container">
+      
+      <!-- 模擬貼紙 -->
+      <div class="spec-sticker">
+        <h4>AC ADAPTER (電源供應器)</h4>
+        <div class="spec-line" style="font-size:13px; color:#555;">MODEL(型號): EN-65W</div>
+        <div class="spec-line" style="font-size:13px; color:#555;">INPUT(輸入): 100-240V ~ 1.5A 50-60Hz</div>
+        <div class="spec-line" style="margin-top:8px;">
+          OUTPUT (輸出):<br/>
+          <span class="spec-highlight">20.0V ⎓ 3.25A</span>
+          <!-- 貼紙上同時顯示瓦數 -->
+          <span class="spec-watt-badge">65W</span>
+        </div>
+      </div>
+      
+      <!-- 白話文教學說明 -->
+      <div class="spec-teaching-text">
+        <strong style="color:var(--accent); font-size:16px;">💡 找不到瓦數 (W) 怎麼辦？</strong><br/>
+        有些電器會直接寫出總瓦數 (如上圖紅框的 <strong>65W</strong>)。<br/>
+        但如果<strong>沒有直接標示 W</strong>，請找 <strong>OUTPUT (輸出)</strong>，並將 <strong>電壓(V)</strong> 乘上 <strong>電流(A)</strong> 就能自己算出來：
+        
+        <div class="spec-formula">
+          👉 <strong>計算公式：20(V) × 3.25(A) = 65W</strong>
+        </div>
+        
+        <div style="margin-top:8px; font-size:13px; color:var(--muted); text-align:center;">
+          （算出來後，直接在上方欄位填寫 65 即可）
+        </div>
+      </div>
+    </div>
+
+    <div id="limit" class="limit" aria-live="polite" role="alert"></div>
+
+    <div class="actions">
+      <button class="calculate" onclick="calculate()">請輸入數值並點擊計算</button>
+      <button class="reset" onclick="resetForm()">重設</button>
+    </div>
+
+    <div class="result" id="result" aria-live="polite">請輸入數值進行計算</div>
+    
+    <p id="globalWarn" style="display:none;background:rgba(255,92,92,.15);color:#ff8080;padding:10px;border-radius:12px;border:1px solid rgba(255,92,92,.4);font-weight:700;text-align:left;"> 注意：此類高功率電器不適合搭配 Enerpad AC 行動電源。</p>
+
+    <details class="accordion" id="mainGuide">
+      <summary> 查看功率計算公式與說明</summary>
+      <div class="panel">
+        <p class="section-title" style="font-weight:bold;color:var(--accent);">計算公式：</p>
+        <p><b>容量 (Wh) × 0.8 ÷ 功率 (W)</b></p>
+        <p>為何乘 0.8？以預留逆變損耗與安全餘裕，做保守估算。</p>
+
+        <p class="section-title" style="font-weight:bold;color:var(--accent);">常見電器功率範例：</p>
+        <details class="accordion">
+          <summary>常見電器功率</summary>
+          <div class="panel">
+            <ul>
+              <li>LED 燈泡：5W ~ 15W</li>
+              <li>小冰箱（行動冰箱）：50W ~ 100W</li>
+              <li>筆記型電腦：45W ~ 250W（依型號差異）</li>
+              <li>電視機（32~50吋）：60W ~ 150W</li>
+              <li>DC直流電扇：5W ~ 25W（較傳統電扇省電）</li>
+              <li>陽壓呼吸器：75W ~ 200W</li>
+            </ul>
+          </div>
+        </details>
+
+        <p class="section-title" style="font-weight:bold;color:var(--accent);">注意事項：</p>
+        <p>「連續使用負載」指的是行動電源可以長時間穩定輸出的最大功率。<br>有些電器會在啟動瞬間產生短暫峰值功率，可能高於連續使用負載，但時間極短，不等同於可長時間承載。</p>
+
+        <p class="section-title" style="font-weight:bold;color:var(--accent);">高功率家電範例：</p>
+        <details class="accordion" id="highPower">
+          <summary>高功率家電</summary>
+          <div class="panel">
+            <ul>
+              <li>吹風機：1000W ~ 1800W</li>
+              <li>微波爐：800W ~ 1500W</li>
+              <li>電磁爐：1200W ~ 2000W</li>
+              <li>電熱水壺：1000W ~ 1500W</li>
+            </ul>
+            <p style="background:rgba(255,92,92,.15);color:#ff8080;padding:10px;border-radius:12px;border:1px solid rgba(255,92,92,.4);font-weight:700;"> 注意：此類高功率電器不適合搭配 Enerpad AC 行動電源。</p>
+          </div>
+        </details>
+        <p class="hint" style="font-size:12px;color:var(--muted);">若只看到 mA，請先換算為 A（如 500mA = 0.5A）。</p>
+      </div>
+    </details>
+  </div>
+
+  <script>
+    const SPECS={
+      // 移除 name 屬性裡的括號
+      MD27KD:{cap:91.6, max:100, name:"MD-27KD", plane:true, pd:true},
+      AC27KD:{cap:91.6, max:100, name:"AC-27KD", plane:true},
+      MD40KD:{cap:144.7, max:100, name:"MD-40KD", checkPlane:true, pd:true},
+      AC40K:{cap:144.7, max:100, name:"AC-40K", checkPlane:true},
+      MD42K:{cap:149.0, max:200, name:"MD-42K", pd:true, checkPlane:true},
+      UPS55K:{cap:198.7, max:200, name:"UPS-55K", ups:true},
+      MD80K:{cap:298.0, max:200, name:"MD-80K", pd:true},
+      AC160K:{cap:576.0, max:200, name:"AC-160K"}
+    };
+
+    const modelSel=document.getElementById('model');
+    const capacityInput=document.getElementById('capacity');
+    const specBox=document.getElementById('specBox');
+    const resultDiv=document.getElementById('result');
+    const limitDiv=document.getElementById('limit');
+    const powerInput=document.getElementById('power');
+    const globalWarn=document.getElementById('globalWarn');
+
+    function renderBadges(spec){
+      let badges="";
+      if(spec.ups)badges+=`<span class="badge badge-ups">UPS 不斷電</span>`;
+      if(spec.pd)badges+=`<span class="badge badge-pd">PD 快充</span>`;
+      if(spec.plane)badges+=`<span class="badge badge-plane">可上飛機</span>`;
+      if(spec.checkPlane)badges+=`<span class="badge badge-check">請查詢欲搭乘航空公司行動電源上機許可</span>`;
+      return badges;
+    }
+
+    function syncSpec(){
+      const id=modelSel.value; const spec=SPECS[id];
+      if(!spec){
+        specBox.innerHTML='請選擇型號以查看規格';
+        capacityInput.value='';
+        return;
+      }
+      capacityInput.value=spec.cap;
+      specBox.innerHTML=`<strong>${spec.name}</strong> ${renderBadges(spec)}<br/>容量：約 ${spec.cap} Wh<br/>連續使用負載：${spec.max} W`;
+      
+      limitDiv.style.display='none';
+      resultDiv.textContent='請輸入數值進行計算';
+      globalWarn.style.display='none';
+    }
+
+    // 展開/收合實體標籤教學的函式
+    function toggleSpecDemo(){
+      const demo = document.getElementById('specDemo');
+      if (demo.style.display === 'block') {
+        demo.style.display = 'none';
+      } else {
+        demo.style.display = 'block';
+      }
+    }
+
+    function checkLimit(){
+      const id=modelSel.value; const spec=SPECS[id];
+      const w=parseFloat(powerInput.value);
+      let over=false; let msg='';
+
+      if(!isNaN(w)){
+        globalWarn.style.display = w>200 ? 'block' : 'none';
+        if((id==='MD27KD'||id==='MD40KD'||id==='AC27KD'||id==='AC40K') && w>100 && w<=200){
+          over=true; msg=` 超過連續使用負載（本型號連續使用負載 ${spec.max}W）。建議選擇 MD-42K 以上型號。`;
+        }else if(w>spec.max){
+          over=true; msg=` 超過連續使用負載（本型號連續使用負載 ${spec.max}W）`;
+        }
+      }else{
+        globalWarn.style.display='none';
+      }
+
+      limitDiv.style.display = over ? 'block' : 'none';
+      if(over){ limitDiv.innerHTML = msg; }
+      return over;
+    }
+
+    function calculate(){
+      const id=modelSel.value; const spec=SPECS[id];
+      if(!spec){ alert('請先選擇型號'); return; }
+      
+      const wh=spec.cap; const w=parseFloat(powerInput.value);
+      if(isNaN(w)){ alert(' 請輸入數字！'); return; }
+      if(checkLimit()) return;
+      if(w<=0){ resultDiv.textContent=' 請輸入正確數值'; return; }
+
+      const hours=(wh*0.8)/w; const hr=Math.floor(hours); const min=Math.round((hours-hr)*60);
+      resultDiv.innerHTML=` 預估可使用時間：<strong>${hr} 小時 ${String(min).padStart(2,'0')} 分</strong><br/><span class="highlight">本型號連續使用負載：${spec.max}W</span>`;
+    }
+
+    function resetForm(){
+      modelSel.selectedIndex=0; 
+      powerInput.value=''; 
+      document.getElementById('specDemo').style.display='none'; // 重設時收起標籤教學
+      syncSpec();
+    }
+
+    modelSel.addEventListener('change', syncSpec);
+    powerInput.addEventListener('input', checkLimit);
+    document.addEventListener('DOMContentLoaded', syncSpec);
+    
+    syncSpec();
+
+    (function setupAccordion(){
+      const accordions=document.querySelectorAll('details.accordion');
+      const adjustWhenOpen = (dtl, panel) => {
+        if (!dtl.open) return;
+        if (panel.style.maxHeight !== 'none') {
+          panel.style.maxHeight = panel.scrollHeight + 'px';
+        }
+        const rect = panel.getBoundingClientRect();
+        const overflow = rect.bottom - (window.innerHeight - 12);
+        if (overflow > 0) {
+          window.scrollBy({ top: overflow, left: 0, behavior: 'smooth' });
+        }
+      };
+
+      accordions.forEach(dtl=>{
+        const panel=dtl.querySelector('.panel');
+        if(!panel) return;
+        
+        panel.style.maxHeight='0px';
+        const onToggle=()=>{
+          if(dtl.open){
+            panel.style.maxHeight=panel.scrollHeight+'px';
+            const onEnd=()=>{
+              panel.style.maxHeight='none';
+              panel.removeEventListener('transitionend', onEnd);
+              adjustWhenOpen(dtl, panel);
+            };
+            panel.addEventListener('transitionend', onEnd);
+          }else{
+            if(panel.style.maxHeight==='none'){
+              panel.style.maxHeight=panel.scrollHeight+'px';
+              panel.getBoundingClientRect();
+            }
+            requestAnimationFrame(()=>{ panel.style.maxHeight='0px'; });
+          }
+        };
+
+        if(dtl.open){ panel.style.maxHeight='none'; }
+        dtl.addEventListener('toggle', onToggle);
+
+        const recalc = ()=> adjustWhenOpen(dtl, panel);
+        window.addEventListener('resize', recalc);
+        window.addEventListener('orientationchange', recalc);
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', recalc);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
