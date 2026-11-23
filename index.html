@@ -2,402 +2,697 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0f19" />
-  <title>Enerpad AC 行動電源使用時間試算</title>
+  <title>enerpad AC 行動電源使用時間試算（2026 最新含 MD-160K）</title>
+  <meta name="description" content="enerpad AC 行動電源全系列（MD-27KD / MD-40KD / MD-42K / MD-80K / MD-160K / UPS-55K / AC 系列）使用時間即時試算，支援常見電器快選、V×A 瓦數換算與全機型續航對比。" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#0b0f19',
+            card: '#121829',
+            field: '#1a2238',
+            stroke: '#1f2a44',
+            cyber: '#00f0ff',
+            electric: '#3d8bff',
+            warn: '#ff5c5c',
+            highlight: '#ffcc00'
+          },
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'system-ui', '-apple-system', 'Arial', 'sans-serif'],
+            mono: ['"Courier New"', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+
   <style>
-    :root{
-      --bg:#0b0f19; --card:#121829; --muted:#9aa4b2; --accent:#3d8bff; --accent-hover:#2f78e6;
-      --field:#1a2238; --stroke:#1f2a44; --warn:#ff5c5c; --text:#e6edf7; --highlight:#ffcc00;
+    body {
+      background-color: #0b0f19;
+      color: #e6edf7;
+      background-image:
+        radial-gradient(circle at 50% 0%, rgba(61, 139, 255, 0.14), transparent 55%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 44px 44px, 44px 44px;
     }
-    body{font-family:Arial,system-ui,-apple-system,"Noto Sans TC",sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:flex-start;min-height:100vh;margin:0;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));box-sizing:border-box;font-size:16px;line-height:1.5}
-    .container{background:var(--card);padding:24px;border-radius:16px;width:100%;max-width:clamp(340px,92vw,560px);box-shadow:0 6px 24px rgba(0,0,0,.55);border:1px solid var(--stroke);box-sizing:border-box}
-    h2{text-align:center;margin:0 0 16px;color:var(--accent);font-size:clamp(20px,2.6vw,24px);line-height:1.35}
-    label{display:block;margin:10px 0 6px;font-size:14px;white-space:normal;text-align:left}
-    select,input[type=number],input[readonly]{width:100%;padding:12px;border-radius:12px;border:1px solid var(--stroke);background:var(--field);color:var(--text);margin-bottom:10px;font-size:16px;outline:none;box-sizing:border-box}
-    .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;margin-left:6px;border:1px solid var(--stroke);background:#0f1729;color:#cfe0ff}
-    .badge-ups{background:#4a1920;color:#ffd1d6;border-color:#7a2b38}
-    .badge-pd{background:#102131;color:#b9f6ff;border-color:#2a4b6b}
-    .badge-plane{background:#10281a;color:#b7ffbf;border-color:#2b5f3a}
-    .badge-check{background:#3b250a;color:#ffdca8;border-color:#6e481b}
-    .spec-box{background:var(--field);padding:12px;border-radius:12px;border:1px solid var(--stroke);font-size:14px;margin-bottom:10px}
-    .spec-box strong{color:var(--accent)}
-    .actions{display:flex;flex-direction:column;gap:10px;margin-top:8px}
-    @media(min-width:480px){.actions{flex-direction:row}}
-    button{flex:1;padding:12px;border:none;border-radius:12px;cursor:pointer;font-size:16px;box-sizing:border-box}
-    .calculate{background:var(--accent);color:#fff;font-weight:700}
-    .calculate:hover{background:var(--accent-hover)}
-    .reset{background:#0f1729;color:#e6edf7;border:1px solid var(--stroke)}
-    .reset:hover{background:#0d1422}
-    .result{margin-top:14px;padding:14px;border-radius:12px;background:var(--field);text-align:left;border:1px solid var(--stroke);box-sizing:border-box;word-break:break-word}
-    .result strong{color:var(--accent)}
-    .highlight{font-weight:700;color:var(--highlight)}
-    .limit{display:none;margin-top:6px;padding:10px;background:rgba(255,92,92,.12);color:#ffd5d5;border:1px solid rgba(255,92,92,.45);border-radius:12px;font-weight:700;text-align:left;box-sizing:border-box;word-break:break-word}
-    details{margin-top:14px;background:var(--field);padding:12px;border-radius:12px;border:1px solid var(--stroke);box-sizing:border-box}
-    summary{cursor:pointer;font-weight:700;color:var(--accent);display:flex;align-items:center}
-    summary::before{content:'＋';margin-right:6px;transition:transform .2s}
-    details[open] summary::before{content:'－'}
-    summary:hover{color:var(--accent-hover)}
-    .panel{overflow:hidden;max-height:0;transition:max-height 280ms ease}
-    
-    /* 教學按鈕與實體標籤樣式 */
-    .spec-teaching-btn {
-      width: 100%;
-      background: linear-gradient(135deg, #1c3561 0%, #29559c 100%);
-      color: #d1e4ff;
-      border: 1px solid #3d8bff;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-bottom: 12px;
-      transition: all 0.3s ease;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(61, 139, 255, 0.15);
-      animation: gentlePulse 2.5s infinite;
+    select option, select optgroup {
+      background-color: #121829;
+      color: #e6edf7;
     }
-    .spec-teaching-btn:hover {
-      background: linear-gradient(135deg, #29559c 0%, #3d8bff 100%);
-      color: #ffffff;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(61, 139, 255, 0.3);
+    select optgroup {
+      color: #7dd3fc;
+      font-weight: 700;
     }
-    @keyframes gentlePulse {
-      0% { box-shadow: 0 0 0 0 rgba(61, 139, 255, 0.5); }
-      70% { box-shadow: 0 0 0 8px rgba(61, 139, 255, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(61, 139, 255, 0); }
+    details > summary {
+      list-style: none;
     }
-    .spec-label-container {
+    details > summary::-webkit-details-marker {
       display: none;
-      margin-bottom: 16px;
-      animation: fadeIn 0.35s ease;
     }
-    @keyframes fadeIn { from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);} }
-    .spec-sticker {
-      background: #e9ecef;
-      color: #111;
-      padding: 16px;
-      border-radius: 8px;
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 14px;
-      box-shadow: inset 0 0 8px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.3);
-      position: relative;
+    details[open] .chevron-icon {
+      transform: rotate(180deg);
     }
-    .spec-sticker h4 { 
-      margin: 0 0 10px 0; 
-      border-bottom: 2px solid #666; 
-      padding-bottom: 4px; 
-      font-weight: 900; 
-      text-align: center; 
-      letter-spacing: 1px;
-    }
-    .spec-line { margin-bottom: 6px; font-weight: bold;}
-    .spec-highlight {
-      background: #ffcc00;
-      color: #000;
-      padding: 2px 6px;
-      border-radius: 4px;
-      border: 2px solid #e65c00;
-      display: inline-block;
-      margin-top: 4px;
-      font-size: 15px;
-    }
-    .spec-watt-badge {
-      display: inline-block;
-      margin-left: 6px;
-      font-size: 15px;
-      font-weight: 900;
-      color: #d32f2f;
-      border: 2px solid #d32f2f;
-      padding: 1px 6px;
-      border-radius: 4px;
-      background: rgba(211, 47, 47, 0.08);
-      transform: translateY(2px);
-    }
-    .spec-teaching-text {
-      background: var(--field);
-      color: var(--text);
-      padding: 14px;
-      border-radius: 12px;
-      margin-top: 10px;
-      border: 1px solid var(--stroke);
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-    }
-    .spec-formula {
-      background: rgba(255, 204, 0, 0.12);
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px dashed rgba(255, 204, 0, 0.5);
-      margin-top: 10px;
-      color: #ffdca8;
-      text-align: center;
-      font-size: 15px;
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      opacity: 0.6;
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <h2>Enerpad AC 行動電源<br/>使用時間試算</h2>
+<body class="min-h-screen flex flex-col items-center justify-start px-3 py-6 sm:py-10 font-sans antialiased selection:bg-cyber selection:text-black">
 
-    <label for="model">選擇型號：</label>
-    <select id="model">
-      <option value="MD27KD">MD-27KD</option>
-      <option value="AC27KD">AC-27KD</option>
-      <option value="MD40KD">MD-40KD</option>
-      <option value="AC40K">AC-40K</option>
-      <option value="MD42K">MD-42K</option>
-      <option value="UPS55K">UPS-55K</option>
-      <option value="MD80K">MD-80K</option>
-      <option value="AC160K">AC-160K</option>
-    </select>
+  <main class="w-full max-w-[600px] bg-card/95 backdrop-blur-xl border border-stroke rounded-3xl shadow-[0_24px_70px_rgba(0,0,0,0.6)] p-5 sm:p-7 space-y-5">
 
-    <div id="specBox" class="spec-box">請選擇型號以查看規格</div>
+    <!-- Header -->
+    <header class="text-center space-y-2 pb-2 border-b border-stroke/80">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-electric/10 border border-electric/30 text-[11px] font-medium text-sky-300 tracking-wide">
+        <i data-lucide="zap" class="w-3.5 h-3.5 text-cyber"></i>
+        <span>2026 最新版 · 已收錄旗艦 MD-160K (596Wh)</span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
+        enerpad AC 行動電源<br />
+        <span class="text-electric">使用時間試算</span>
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-400">
+        MD 系列（PD 快充）在上 · AC / UPS 系列在下，輸入瓦數即時估算
+      </p>
+    </header>
 
-    <label for="capacity">容量（Wh）</label>
-    <input id="capacity" type="number" readonly />
-    <div class="hint" style="font-size:12px;color:var(--muted);margin-top:-6px;">由型號自動帶入。</div>
+    <!-- Model Selector -->
+    <section class="space-y-2.5">
+      <label for="model" class="flex items-center justify-between text-sm font-semibold text-slate-200">
+        <span class="inline-flex items-center gap-1.5">
+          <i data-lucide="battery-charging" class="w-4 h-4 text-cyber"></i>
+          選擇型號：
+        </span>
+        <span class="text-[11px] text-slate-400">共 9 款機型</span>
+      </label>
 
-    <label for="power">輸入預計使用的電器功率 (W)</label>
-    <input type="number" id="power" placeholder="例如 65" inputmode="decimal" step="0.1" />
+      <div class="relative">
+        <select id="model" onchange="onModelChange()" class="w-full appearance-none bg-field border border-stroke focus:border-electric focus:ring-2 focus:ring-electric/30 text-white font-semibold rounded-xl px-4 py-3.5 pr-10 text-base transition outline-none cursor-pointer">
+          <optgroup label="── MD 系列（支援 Type-C PD 快充）──">
+            <option value="MD27KD">MD-27KD（96.48Wh · 100W · 可上機）</option>
+            <option value="MD40KD">MD-40KD（144.72Wh · 100W）</option>
+            <option value="MD42K">MD-42K（149.04Wh · 200W）</option>
+            <option value="MD80K" selected>MD-80K（298.08Wh · 200W · 熱銷主力）</option>
+            <option value="MD160K">MD-160K（596Wh · 150W · NEW 最新大容量）</option>
+          </optgroup>
+          <optgroup label="── AC / UPS 系列 ──">
+            <option value="UPS55K">UPS-55K（198.72Wh · 200W · 不斷電系統）</option>
+            <option value="AC27KD">AC-27KD（91.6Wh · 100W · 可上機）</option>
+            <option value="AC40K">AC-40K（144.7Wh · 100W）</option>
+            <option value="AC160K">AC-160K（576Wh · 200W · 大容量）</option>
+          </optgroup>
+        </select>
+        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"></i>
+      </div>
 
-    <!-- 規格教學按鈕 -->
-    <button type="button" class="spec-teaching-btn" onclick="toggleSpecDemo()">
-      💡 我要怎麼看電器規格了解耗電？
-    </button>
+      <!-- Dynamic Model Spec Card -->
+      <div id="specBox" class="rounded-2xl bg-obsidian/80 border border-stroke p-4 space-y-2.5">
+        <!-- Populated by JS -->
+      </div>
+    </section>
 
-    <!-- 實體標籤教學區塊 (預設隱藏) -->
-    <div id="specDemo" class="spec-label-container">
-      <div class="spec-sticker">
-        <h4>AC ADAPTER (電源供應器)</h4>
-        <div class="spec-line" style="font-size:13px; color:#555;">MODEL(型號): EN-65W</div>
-        <div class="spec-line" style="font-size:13px; color:#555;">INPUT(輸入): 100-240V ~ 1.5A 50-60Hz</div>
-        <div class="spec-line" style="margin-top:8px;">
-          OUTPUT (輸出):<br/>
-          <span class="spec-highlight">20.0V ⎓ 3.25A</span>
-          <span class="spec-watt-badge">65W</span>
+    <!-- Capacity (Auto-filled) & Power Input -->
+    <section class="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
+      <div class="sm:col-span-5 space-y-1.5">
+        <label for="capacity" class="block text-xs font-semibold text-slate-300">容量（Wh）</label>
+        <input id="capacity" type="text" readonly class="w-full bg-field/60 border border-stroke text-slate-300 font-mono font-bold rounded-xl px-3.5 py-3 text-base outline-none cursor-not-allowed" />
+        <p class="text-[11px] text-slate-400">由型號自動帶入。</p>
+      </div>
+
+      <div class="sm:col-span-7 space-y-1.5">
+        <label for="power" class="block text-xs font-semibold text-slate-200">
+          輸入預計使用的電器功率 (W)
+        </label>
+        <div class="relative">
+          <input id="power" type="number" inputmode="decimal" step="0.1" min="0.1" placeholder="例如 65" oninput="handlePowerInput()" onkeydown="if(event.key==='Enter') calculate();" class="w-full bg-field border border-electric/50 focus:border-cyber focus:ring-2 focus:ring-cyber/30 text-white font-mono font-bold rounded-xl px-4 py-3 pr-10 text-base outline-none transition" />
+          <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-mono font-bold text-cyber">W</span>
+        </div>
+        <p class="text-[11px] text-slate-400">輸入數字後自動即時試算，或點下方快選。</p>
+      </div>
+    </section>
+
+    <!-- Quick Appliance Preset Chips -->
+    <section class="space-y-2">
+      <div class="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-highlight"></i>
+        <span>常見電器一鍵帶入：</span>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" onclick="applyPreset(20)" class="px-2.5 py-1.5 rounded-lg bg-field hover:bg-electric/20 border border-stroke hover:border-electric text-xs text-slate-200 transition">DC 電扇 20W</button>
+        <button type="button" onclick="applyPreset(45)" class="px-2.5 py-1.5 rounded-lg bg-field hover:bg-electric/20 border border-stroke hover:border-electric text-xs text-slate-200 transition">低軌衛星 45W</button>
+        <button type="button" onclick="applyPreset(65)" class="px-2.5 py-1.5 rounded-lg bg-field hover:bg-electric/20 border border-stroke hover:border-electric text-xs text-slate-200 transition">筆電 65W</button>
+        <button type="button" onclick="applyPreset(80)" class="px-2.5 py-1.5 rounded-lg bg-field hover:bg-electric/20 border border-stroke hover:border-electric text-xs text-slate-200 transition">行動冰箱 80W</button>
+        <button type="button" onclick="applyPreset(100)" class="px-2.5 py-1.5 rounded-lg bg-field hover:bg-electric/20 border border-stroke hover:border-electric text-xs text-slate-200 transition">陽壓呼吸器 100W</button>
+        <button type="button" onclick="applyPreset(150)" class="px-2.5 py-1.5 rounded-lg bg-field hover:bg-electric/20 border border-stroke hover:border-electric text-xs text-slate-200 transition">空拍機快充 150W</button>
+      </div>
+    </section>
+
+    <!-- Spec Teaching Button & Interactive V x A Converter -->
+    <section class="space-y-3">
+      <button type="button" onclick="toggleSpecDemo()" class="w-full py-3 px-4 rounded-xl bg-electric/15 hover:bg-electric/25 border border-electric/50 text-sky-200 font-bold text-sm flex items-center justify-center gap-2 transition">
+        <i data-lucide="lightbulb" class="w-4 h-4 text-highlight"></i>
+        <span>我要怎麼看電器規格了解耗電？（附 V×A 換算）</span>
+      </button>
+
+      <div id="specDemo" class="hidden space-y-3">
+        <!-- Simulated AC Adapter Sticker (Preserved & Refined) -->
+        <div class="rounded-2xl bg-slate-100 text-slate-900 p-4 border-2 border-slate-300 shadow-inner font-mono text-xs sm:text-sm space-y-1.5">
+          <div class="text-center font-bold tracking-wider pb-1.5 border-b border-slate-400">
+            AC ADAPTER（電源供應器）
+          </div>
+          <div>MODEL（型號）：EN-65W</div>
+          <div>INPUT（輸入）：100-240V ~ 1.5A 50-60Hz</div>
+          <div class="font-bold pt-1">OUTPUT（輸出）：</div>
+          <div class="flex flex-wrap items-center gap-2 pt-0.5">
+            <span class="px-2.5 py-1 rounded bg-amber-300 border-2 border-amber-500 font-bold text-slate-900">20.0V ⎓ 3.25A</span>
+            <span class="px-2.5 py-1 rounded bg-rose-100 border-2 border-rose-500 font-bold text-rose-700">65W</span>
+          </div>
+        </div>
+
+        <!-- Explanation + Live V x A Mini Helper -->
+        <div class="rounded-2xl bg-obsidian/90 border border-stroke p-4 space-y-3 text-xs sm:text-sm text-slate-300">
+          <div class="font-bold text-sky-300 flex items-center gap-1.5">
+            <i data-lucide="calculator" class="w-4 h-4 text-highlight"></i>
+            <span>找不到瓦數 (W)？直接輸入 V × A 幫您算：</span>
+          </div>
+          <p class="leading-relaxed text-slate-400">
+            有些電器會直接寫總瓦數（如上圖紅框 <strong class="text-white">65W</strong>）；若沒有，請找 <strong class="text-white">OUTPUT（輸出）</strong> 的電壓 (V) 與電流 (A)，填進下方就會自動相乘並帶入：
+          </p>
+          <div class="grid grid-cols-11 items-center gap-2">
+            <input id="vaVolt" type="number" inputmode="decimal" step="0.1" placeholder="電壓 V (如 20)" class="col-span-4 bg-field border border-stroke focus:border-cyber rounded-lg px-2.5 py-2 text-white font-mono text-xs sm:text-sm outline-none" />
+            <span class="col-span-1 text-center font-bold text-highlight">×</span>
+            <input id="vaAmp" type="number" inputmode="decimal" step="0.01" placeholder="電流 A (如 3.25)" class="col-span-4 bg-field border border-stroke focus:border-cyber rounded-lg px-2.5 py-2 text-white font-mono text-xs sm:text-sm outline-none" />
+            <button type="button" onclick="calcVA()" class="col-span-2 py-2 rounded-lg bg-cyber text-black font-bold text-xs hover:bg-white transition">套用</button>
+          </div>
+          <p class="text-[11px] text-slate-400">
+            提示：若只看到 mA，請先除以 1000 換算為 A（例如 500mA = 0.5A）。
+          </p>
         </div>
       </div>
-      
-      <div class="spec-teaching-text">
-        <strong style="color:var(--accent); font-size:16px;">💡 找不到瓦數 (W) 怎麼辦？</strong><br/>
-        有些電器會直接寫出總瓦數 (如上圖紅框的 <strong>65W</strong>)。<br/>
-        但如果<strong>沒有直接標示 W</strong>，請找 <strong>OUTPUT (輸出)</strong>，並將 <strong>電壓(V)</strong> 乘上 <strong>電流(A)</strong> 就能自己算出來：
-        
-        <div class="spec-formula">
-          👉 <strong>計算公式：20(V) × 3.25(A) = 65W</strong>
-        </div>
-        
-        <div style="margin-top:8px; font-size:13px; color:var(--muted); text-align:center;">
-          （算出來後，直接在上方欄位填寫 65 即可）
-        </div>
+    </section>
+
+    <!-- Primary Action Buttons -->
+    <section class="grid grid-cols-3 gap-3">
+      <button type="button" onclick="calculate()" class="col-span-2 py-3.5 px-4 rounded-xl bg-electric hover:bg-blue-500 text-white font-black text-sm sm:text-base shadow-lg shadow-electric/25 transition flex items-center justify-center gap-2">
+        <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+        <span>計算可使用時間</span>
+      </button>
+      <button type="button" onclick="resetForm()" class="col-span-1 py-3.5 px-4 rounded-xl bg-field hover:bg-slate-800 border border-stroke text-slate-200 font-bold text-sm sm:text-base transition flex items-center justify-center gap-1.5">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        <span>重設</span>
+      </button>
+    </section>
+
+    <!-- Warnings (Dynamic Overload & Global High-Power Check) -->
+    <div id="globalWarn" class="hidden rounded-xl bg-red-950/70 border border-warn/60 p-3.5 text-xs sm:text-sm text-red-200 flex items-start gap-2.5">
+      <i data-lucide="alert-triangle" class="w-5 h-5 text-warn shrink-0 mt-0.5"></i>
+      <div>
+        <div class="font-bold text-red-100">高功率家電不適用提醒</div>
+        <div id="globalWarnText">注意：此類超過 200W 之高功率電器不適合搭配 enerpad AC 行動電源。</div>
       </div>
     </div>
 
-    <div id="limit" class="limit" aria-live="polite" role="alert"></div>
-
-    <div class="actions">
-      <button class="calculate" onclick="calculate()">請輸入數值並點擊計算</button>
-      <button class="reset" onclick="resetForm()">重設</button>
+    <div id="limitWarn" class="hidden rounded-xl bg-amber-950/60 border border-amber-500/50 p-3.5 text-xs sm:text-sm text-amber-100 space-y-2">
+      <div class="flex items-start gap-2">
+        <i data-lucide="shield-alert" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+        <div id="limitWarnText" class="leading-relaxed"></div>
+      </div>
+      <div id="recommendBtns" class="flex flex-wrap gap-1.5 pl-7"></div>
     </div>
 
-    <div class="result" id="result" aria-live="polite">請輸入數值進行計算</div>
-    
-    <p id="globalWarn" style="display:none;background:rgba(255,92,92,.15);color:#ff8080;padding:10px;border-radius:12px;border:1px solid rgba(255,92,92,.4);font-weight:700;text-align:left;"> 注意：此類高功率電器不適合搭配 Enerpad AC 行動電源。</p>
+    <!-- Result Box -->
+    <section id="resultBox" class="rounded-2xl bg-obsidian border border-stroke p-4 sm:p-5 space-y-2">
+      <div class="text-sm text-slate-400 text-center py-2">請輸入電器功率 (W) 或點選上方常見電器進行試算</div>
+    </section>
 
-    <details class="accordion" id="mainGuide">
-      <summary> 查看功率計算公式與說明</summary>
-      <div class="panel">
-        <p class="section-title" style="font-weight:bold;color:var(--accent);">計算公式：</p>
-        <p><b>容量 (Wh) × 0.8 ÷ 功率 (W)</b></p>
-        <p>為何乘 0.8？以預留逆變損耗與安全餘裕，做保守估算。</p>
-
-        <p class="section-title" style="font-weight:bold;color:var(--accent);">常見電器功率範例：</p>
-        <details class="accordion">
-          <summary>常見電器功率</summary>
-          <div class="panel">
-            <ul>
-              <li>LED 燈泡：5W ~ 15W</li>
-              <li>小冰箱（行動冰箱）：50W ~ 100W</li>
-              <li>筆記型電腦：45W ~ 250W（依型號差異）</li>
-              <li>電視機（32~50吋）：60W ~ 150W</li>
-              <li>DC直流電扇：5W ~ 25W（較傳統電扇省電）</li>
-              <li>陽壓呼吸器：75W ~ 200W</li>
-            </ul>
-          </div>
-        </details>
-
-        <p class="section-title" style="font-weight:bold;color:var(--accent);">注意事項：</p>
-        <p>「連續使用負載」指的是行動電源可以長時間穩定輸出的最大功率。<br>有些電器會在啟動瞬間產生短暫峰值功率，可能高於連續使用負載，但時間極短，不等同於可長時間承載。</p>
-
-        <p class="section-title" style="font-weight:bold;color:var(--accent);">高功率家電範例：</p>
-        <details class="accordion" id="highPower">
-          <summary>高功率家電</summary>
-          <div class="panel">
-            <ul>
-              <li>吹風機：1000W ~ 1800W</li>
-              <li>微波爐：800W ~ 1500W</li>
-              <li>電磁爐：1200W ~ 2000W</li>
-              <li>電熱水壺：1000W ~ 1500W</li>
-            </ul>
-            <p style="background:rgba(255,92,92,.15);color:#ff8080;padding:10px;border-radius:12px;border:1px solid rgba(255,92,92,.4);font-weight:700;"> 注意：此類高功率電器不適合搭配 Enerpad AC 行動電源。</p>
-          </div>
-        </details>
-        <p class="hint" style="font-size:12px;color:var(--muted);">若只看到 mA，請先換算為 A（如 500mA = 0.5A）。</p>
+    <!-- All-Models Side-by-Side Comparison Accordion -->
+    <details id="compareDetails" class="rounded-2xl bg-obsidian/70 border border-stroke overflow-hidden">
+      <summary class="px-4 py-3.5 flex items-center justify-between cursor-pointer text-sm font-bold text-sky-300 hover:bg-white/[0.03] transition">
+        <span class="inline-flex items-center gap-2">
+          <i data-lucide="bar-chart-3" class="w-4 h-4 text-cyber"></i>
+          <span>展開全系列 9 款機型同時試算對比</span>
+        </span>
+        <i data-lucide="chevron-down" class="chevron-icon w-4 h-4 text-slate-400 transition-transform"></i>
+      </summary>
+      <div id="compareTableWrap" class="px-4 pb-4 pt-1 border-t border-stroke/60">
+        <p class="text-xs text-slate-400 py-2">請先輸入電器功率 (W)，即可自動並列比對 MD 與 AC 全系列可用時數。</p>
       </div>
     </details>
-  </div>
+
+    <!-- Formula & Appliance Guide Accordion (Preserved & Cleaned Up) -->
+    <details id="mainGuide" class="rounded-2xl bg-obsidian/70 border border-stroke overflow-hidden">
+      <summary class="px-4 py-3.5 flex items-center justify-between cursor-pointer text-sm font-bold text-slate-200 hover:bg-white/[0.03] transition">
+        <span class="inline-flex items-center gap-2">
+          <i data-lucide="book-open" class="w-4 h-4 text-electric"></i>
+          <span>查看功率計算公式、常見電器與注意事項</span>
+        </span>
+        <i data-lucide="chevron-down" class="chevron-icon w-4 h-4 text-slate-400 transition-transform"></i>
+      </summary>
+      <div class="px-4 pb-5 pt-3 border-t border-stroke/60 space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
+        <div class="space-y-1.5">
+          <div class="font-bold text-white">計算公式：</div>
+          <div class="p-3 rounded-xl bg-field/80 border border-stroke font-mono text-cyber text-xs sm:text-sm">
+            預估可用時間（小時）＝ ( 電池容量 Wh × 0.8 ) ÷ 電器功率 W
+          </div>
+          <p class="text-xs text-slate-400">
+            為何乘以 <strong class="text-slate-200">0.8</strong>？以預留交流逆變轉換損耗與安全餘裕，做保守實務估算。（若改用 Type-C PD 直連筆電／設備，省去 AC 變壓器轉換損耗可再延長續航。）
+          </p>
+        </div>
+
+        <details class="rounded-xl bg-field/50 border border-stroke/80 p-3">
+          <summary class="font-bold text-sky-300 cursor-pointer flex items-center justify-between">
+            <span>常見電器功率參考</span>
+            <i data-lucide="chevron-down" class="chevron-icon w-4 h-4 transition-transform"></i>
+          </summary>
+          <ul class="mt-2.5 space-y-1 text-xs text-slate-300 list-disc pl-5">
+            <li>LED 燈泡：5W ~ 15W</li>
+            <li>DC 直流電扇：5W ~ 25W（較傳統電扇省電）</li>
+            <li>低軌衛星終端（如 Starlink Mini）：30W ~ 50W</li>
+            <li>筆記型電腦：45W ~ 150W（視機型與高負載差異）</li>
+            <li>行動小冰箱：50W ~ 100W</li>
+            <li>電視機（32~50 吋）：60W ~ 150W</li>
+            <li>陽壓呼吸器（CPAP）：75W ~ 150W（視加熱加濕器開啟狀態）</li>
+          </ul>
+        </details>
+
+        <div class="space-y-1">
+          <div class="font-bold text-white">注意事項：</div>
+          <p class="text-xs text-slate-400">
+            部分馬達類、壓縮機類（如冰箱）或醫療設備開機瞬間會有較高「啟動峰值功率」，請確認設備連續負載不超過機型標示之連續輸出功率，且瞬間峰值不超過最大輸出功率。
+          </p>
+        </div>
+
+        <details class="rounded-xl bg-red-950/35 border border-warn/40 p-3">
+          <summary class="font-bold text-red-300 cursor-pointer flex items-center justify-between">
+            <span>不適用之高功率發熱家電範例</span>
+            <i data-lucide="chevron-down" class="chevron-icon w-4 h-4 transition-transform"></i>
+          </summary>
+          <ul class="mt-2.5 space-y-1 text-xs text-red-200 list-disc pl-5">
+            <li>吹風機：1000W ~ 1800W</li>
+            <li>微波爐：800W ~ 1500W</li>
+            <li>電磁爐：1200W ~ 2000W</li>
+            <li>電熱水壺／快煮壺：1000W ~ 1500W</li>
+          </ul>
+          <div class="mt-2.5 p-2.5 rounded-lg bg-red-950/70 border border-warn/50 text-xs text-red-200 font-semibold">
+            注意：此類高功率發熱電器不適合搭配 enerpad AC 行動電源。
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <!-- Official Links & Footer -->
+    <footer class="pt-3 border-t border-stroke/80 space-y-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <a href="https://www.camka.com.tw/enerpadac/" target="_blank" rel="noopener noreferrer" class="py-2.5 px-4 rounded-xl bg-field hover:bg-electric/20 border border-stroke hover:border-electric text-xs sm:text-sm font-bold text-sky-300 flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="globe" class="w-4 h-4"></i>
+          <span>查看 enerpad 全系列規格頁</span>
+        </a>
+        <a href="https://line.me/R/ti/p/@camka" target="_blank" rel="noopener noreferrer" class="py-2.5 px-4 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/50 text-xs sm:text-sm font-bold text-emerald-300 flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="message-circle" class="w-4 h-4"></i>
+          <span>LINE 專人選型／機關報價 (@camka)</span>
+        </a>
+      </div>
+      <p class="text-[11px] text-center text-slate-500 leading-relaxed">
+        台灣總代理 肯佳企業股份有限公司 · 試算結果僅供參考，實際續航會依環境溫度、電池健康度與設備瞬間功耗略有差異。
+      </p>
+    </footer>
+
+  </main>
 
   <script>
-    const SPECS={
-      // 已將 MD27KD 的容量修改為 96.48 Wh
-      MD27KD:{cap:96.48, max:100, name:"MD-27KD", plane:true, pd:true},
-      AC27KD:{cap:91.6, max:100, name:"AC-27KD", plane:true},
-      MD40KD:{cap:144.7, max:100, name:"MD-40KD", checkPlane:true, pd:true},
-      AC40K:{cap:144.7, max:100, name:"AC-40K", checkPlane:true},
-      MD42K:{cap:149.0, max:200, name:"MD-42K", pd:true, checkPlane:true},
-      UPS55K:{cap:198.7, max:200, name:"UPS-55K", ups:true},
-      MD80K:{cap:298.0, max:200, name:"MD-80K", pd:true},
-      AC160K:{cap:576.0, max:200, name:"AC-160K"}
+    // MD 系列在上，AC / UPS 系列在下（依據 2026 官方規格表）
+    const MODEL_ORDER = [
+      'MD27KD', 'MD40KD', 'MD42K', 'MD80K', 'MD160K',
+      'UPS55K', 'AC27KD', 'AC40K', 'AC160K'
+    ];
+
+    const SPECS = {
+      // ── MD 系列（支援 Type-C PD 快充）──
+      MD27KD: {
+        name: 'MD-27KD',
+        group: 'MD',
+        wh: 96.48,
+        max: 100,
+        peak: 120,
+        weight: '710 g',
+        badges: [
+          { text: 'PD 快充', cls: 'bg-cyan-950/90 text-cyan-200 border-cyan-500/40' },
+          { text: '可上飛機', cls: 'bg-emerald-950/90 text-emerald-200 border-emerald-500/40' }
+        ],
+        url: 'https://www.camka.com.tw/%E5%95%86%E5%93%81/enerpad-md27kd/'
+      },
+      MD40KD: {
+        name: 'MD-40KD',
+        group: 'MD',
+        wh: 144.72,
+        max: 100,
+        peak: 120,
+        weight: '940 g',
+        badges: [
+          { text: 'PD 快充', cls: 'bg-cyan-950/90 text-cyan-200 border-cyan-500/40' },
+          { text: '請查詢欲搭乘航空公司上機許可', cls: 'bg-amber-950/90 text-amber-200 border-amber-500/40' }
+        ],
+        url: 'https://www.camka.com.tw/%E5%95%86%E5%93%81/enerpad-md40kd/'
+      },
+      MD42K: {
+        name: 'MD-42K',
+        group: 'MD',
+        wh: 149.04,
+        max: 200,
+        peak: 250,
+        weight: '1,410 g',
+        badges: [
+          { text: 'PD 快充', cls: 'bg-cyan-950/90 text-cyan-200 border-cyan-500/40' },
+          { text: '雙孔 AC', cls: 'bg-blue-950/90 text-blue-200 border-blue-500/40' },
+          { text: '請查詢欲搭乘航空公司上機許可', cls: 'bg-amber-950/90 text-amber-200 border-amber-500/40' }
+        ],
+        url: 'https://www.camka.com.tw/%E5%95%86%E5%93%81/enerpad-md42k/'
+      },
+      MD80K: {
+        name: 'MD-80K',
+        group: 'MD',
+        wh: 298.08,
+        max: 200,
+        peak: 250,
+        weight: '2,000 g',
+        badges: [
+          { text: 'PD 快充', cls: 'bg-cyan-950/90 text-cyan-200 border-cyan-500/40' },
+          { text: '雙孔 AC', cls: 'bg-blue-950/90 text-blue-200 border-blue-500/40' },
+          { text: '熱銷主力', cls: 'bg-indigo-950/90 text-indigo-200 border-indigo-400/50' }
+        ],
+        url: 'https://www.camka.com.tw/%E5%95%86%E5%93%81/enerpad-md80k/'
+      },
+      MD160K: {
+        name: 'MD-160K',
+        group: 'MD',
+        wh: 596,
+        max: 150,
+        peak: 250,
+        weight: '3,100 g',
+        badges: [
+          { text: 'NEW 最新型號', cls: 'bg-cyber/20 text-cyber border-cyber/60 font-bold' },
+          { text: 'PD 快充', cls: 'bg-cyan-950/90 text-cyan-200 border-cyan-500/40' },
+          { text: '596Wh 超大容量', cls: 'bg-purple-950/90 text-purple-200 border-purple-500/40' }
+        ],
+        url: 'https://www.camka.com.tw/%E5%95%86%E5%93%81/enerpad-md160k/'
+      },
+
+      // ── AC / UPS 系列 ──
+      UPS55K: {
+        name: 'UPS-55K',
+        group: 'AC',
+        wh: 198.72,
+        max: 200,
+        peak: 300,
+        weight: '1,680 g',
+        badges: [
+          { text: 'UPS 不斷電', cls: 'bg-rose-950/90 text-rose-200 border-rose-500/50' },
+          { text: '雙孔 AC', cls: 'bg-blue-950/90 text-blue-200 border-blue-500/40' }
+        ],
+        url: 'https://www.camka.com.tw/%E5%95%86%E5%93%81/enerpad-ups55k/'
+      },
+      AC27KD: {
+        name: 'AC-27KD',
+        group: 'AC',
+        wh: 91.6,
+        max: 100,
+        peak: 120,
+        weight: null,
+        badges: [
+          { text: '可上飛機', cls: 'bg-emerald-950/90 text-emerald-200 border-emerald-500/40' }
+        ],
+        url: 'https://www.camka.com.tw/enerpadac/'
+      },
+      AC40K: {
+        name: 'AC-40K',
+        group: 'AC',
+        wh: 144.7,
+        max: 100,
+        peak: 120,
+        weight: null,
+        badges: [
+          { text: '請查詢欲搭乘航空公司上機許可', cls: 'bg-amber-950/90 text-amber-200 border-amber-500/40' }
+        ],
+        url: 'https://www.camka.com.tw/enerpadac/'
+      },
+      AC160K: {
+        name: 'AC-160K',
+        group: 'AC',
+        wh: 576,
+        max: 200,
+        peak: 250,
+        weight: null,
+        badges: [
+          { text: '雙孔 AC', cls: 'bg-blue-950/90 text-blue-200 border-blue-500/40' },
+          { text: '大容量', cls: 'bg-slate-800 text-slate-200 border-slate-600' }
+        ],
+        url: 'https://www.camka.com.tw/enerpadac/'
+      }
     };
 
-    const modelSel=document.getElementById('model');
-    const capacityInput=document.getElementById('capacity');
-    const specBox=document.getElementById('specBox');
-    const resultDiv=document.getElementById('result');
-    const limitDiv=document.getElementById('limit');
-    const powerInput=document.getElementById('power');
-    const globalWarn=document.getElementById('globalWarn');
+    const GLOBAL_MAX_LOAD = Math.max(...MODEL_ORDER.map((id) => SPECS[id].max));
 
-    function renderBadges(spec){
-      let badges="";
-      if(spec.ups)badges+=`<span class="badge badge-ups">UPS 不斷電</span>`;
-      if(spec.pd)badges+=`<span class="badge badge-pd">PD 快充</span>`;
-      if(spec.plane)badges+=`<span class="badge badge-plane">可上飛機</span>`;
-      if(spec.checkPlane)badges+=`<span class="badge badge-check">請查詢欲搭乘航空公司行動電源上機許可</span>`;
-      return badges;
+    function formatDuration(wh, watts) {
+      const hours = (wh * 0.8) / watts;
+      const totalMin = Math.round(hours * 60);
+      const hr = Math.floor(totalMin / 60);
+      const min = totalMin % 60;
+      return {
+        hours,
+        hr,
+        min,
+        text: `${hr} 小時 ${String(min).padStart(2, '0')} 分`
+      };
     }
 
-    function syncSpec(){
-      const id=modelSel.value; const spec=SPECS[id];
-      if(!spec){
-        specBox.innerHTML='請選擇型號以查看規格';
-        capacityInput.value='';
+    function renderSpecBox() {
+      const id = document.getElementById('model').value;
+      const spec = SPECS[id];
+      document.getElementById('capacity').value = spec.wh;
+
+      const badgesHtml = spec.badges
+        .map((b) => `<span class="px-2 py-0.5 rounded-full border text-[11px] leading-tight ${b.cls}">${b.text}</span>`)
+        .join('');
+
+      document.getElementById('specBox').innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-base font-black text-electric font-mono">${spec.name}</span>
+            ${badgesHtml}
+          </div>
+          <a href="${spec.url}" target="_blank" rel="noopener noreferrer" class="text-[11px] text-cyber hover:underline inline-flex items-center gap-1 shrink-0">
+            商品詳情
+            <i data-lucide="external-link" class="w-3 h-3"></i>
+          </a>
+        </div>
+        <div class="grid grid-cols-3 gap-2 pt-2 border-t border-stroke/70 text-center">
+          <div class="rounded-lg bg-field/60 py-2 px-1">
+            <div class="text-[10px] text-slate-400">電池容量</div>
+            <div class="text-sm font-mono font-bold text-white">${spec.wh} Wh</div>
+          </div>
+          <div class="rounded-lg bg-field/60 py-2 px-1">
+            <div class="text-[10px] text-slate-400">連續／最大輸出</div>
+            <div class="text-sm font-mono font-bold text-highlight">${spec.max}W <span class="text-[11px] text-slate-400 font-normal">/ ${spec.peak}W</span></div>
+          </div>
+          <div class="rounded-lg bg-field/60 py-2 px-1">
+            <div class="text-[10px] text-slate-400">機身淨重</div>
+            <div class="text-sm font-mono font-bold text-slate-200">${spec.weight || '依官網規格'}</div>
+          </div>
+        </div>
+      `;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function checkLimit(w) {
+      const id = document.getElementById('model').value;
+      const spec = SPECS[id];
+      const globalWarn = document.getElementById('globalWarn');
+      const limitWarn = document.getElementById('limitWarn');
+      const limitWarnText = document.getElementById('limitWarnText');
+      const recommendBtns = document.getElementById('recommendBtns');
+
+      globalWarn.classList.add('hidden');
+      limitWarn.classList.add('hidden');
+      recommendBtns.innerHTML = '';
+
+      if (!w || isNaN(w) || w <= 0) return false;
+
+      if (w > GLOBAL_MAX_LOAD) {
+        document.getElementById('globalWarnText').textContent =
+          `注意：輸入功率 ${w}W 已超過全系列最高連續使用負載（${GLOBAL_MAX_LOAD}W），此類高功率電器不適合搭配 enerpad AC 行動電源。`;
+        globalWarn.classList.remove('hidden');
+        return true;
+      }
+
+      if (w > spec.max) {
+        const compatible = MODEL_ORDER.filter((mId) => SPECS[mId].max >= w);
+        limitWarnText.innerHTML =
+          `<strong>超過本型號連續使用負載！</strong> ${spec.name} 連續負載為 <strong class="text-amber-300">${spec.max}W</strong>（目前輸入 ${w}W）。建議改選以下支援 ${w}W 之機型：`;
+        recommendBtns.innerHTML = compatible
+          .map((mId) => `<button type="button" onclick="selectModel('${mId}')" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-400 hover:text-black border border-amber-400/50 text-xs font-mono font-bold text-amber-200 transition">切換至 ${SPECS[mId].name} (${SPECS[mId].max}W)</button>`)
+          .join('');
+        limitWarn.classList.remove('hidden');
+        return true;
+      }
+
+      return false;
+    }
+
+    function renderComparison(w) {
+      const wrap = document.getElementById('compareTableWrap');
+      const currentId = document.getElementById('model').value;
+      if (!w || isNaN(w) || w <= 0) {
+        wrap.innerHTML = '<p class="text-xs text-slate-400 py-2">請先輸入電器功率 (W)，即可自動並列比對 MD 與 AC 全系列可用時數。</p>';
         return;
       }
-      capacityInput.value=spec.cap;
-      specBox.innerHTML=`<strong>${spec.name}</strong> ${renderBadges(spec)}<br/>容量：約 ${spec.cap} Wh<br/>連續使用負載：${spec.max} W`;
-      
-      limitDiv.style.display='none';
-      resultDiv.textContent='請輸入數值進行計算';
-      globalWarn.style.display='none';
-    }
 
-    function toggleSpecDemo(){
-      const demo = document.getElementById('specDemo');
-      if (demo.style.display === 'block') {
-        demo.style.display = 'none';
-      } else {
-        demo.style.display = 'block';
-      }
-    }
+      const mdRows = MODEL_ORDER.filter((id) => SPECS[id].group === 'MD');
+      const acRows = MODEL_ORDER.filter((id) => SPECS[id].group === 'AC');
 
-    function checkLimit(){
-      const id=modelSel.value; const spec=SPECS[id];
-      const w=parseFloat(powerInput.value);
-      let over=false; let msg='';
-
-      if(!isNaN(w)){
-        globalWarn.style.display = w>200 ? 'block' : 'none';
-        if((id==='MD27KD'||id==='MD40KD'||id==='AC27KD'||id==='AC40K') && w>100 && w<=200){
-          over=true; msg=` 超過連續使用負載（本型號連續使用負載 ${spec.max}W）。建議選擇 MD-42K 以上型號。`;
-        }else if(w>spec.max){
-          over=true; msg=` 超過連續使用負載（本型號連續使用負載 ${spec.max}W）`;
-        }
-      }else{
-        globalWarn.style.display='none';
+      function buildRows(ids) {
+        return ids.map((id) => {
+          const s = SPECS[id];
+          const over = w > s.max;
+          const isCur = id === currentId;
+          const dur = over ? '超過連續負載' : formatDuration(s.wh, w).text;
+          return `
+            <tr onclick="selectModel('${id}')" class="cursor-pointer border-b border-stroke/50 transition ${isCur ? 'bg-electric/15' : 'hover:bg-white/[0.03]'}">
+              <td class="py-2.5 px-2 font-mono font-bold ${isCur ? 'text-cyber' : 'text-white'}">
+                ${s.name}${id === 'MD160K' ? ' <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyber/20 text-cyber">NEW</span>' : ''}
+              </td>
+              <td class="py-2.5 px-2 text-right font-mono text-slate-300">${s.wh} Wh</td>
+              <td class="py-2.5 px-2 text-right font-mono text-slate-300">${s.max} W</td>
+              <td class="py-2.5 px-2 text-right font-mono font-bold ${over ? 'text-warn' : 'text-sky-300'}">${dur}</td>
+            </tr>
+          `;
+        }).join('');
       }
 
-      limitDiv.style.display = over ? 'block' : 'none';
-      if(over){ limitDiv.innerHTML = msg; }
-      return over;
+      wrap.innerHTML = `
+        <div class="overflow-x-auto pt-2">
+          <table class="w-full text-xs border-collapse">
+            <thead>
+              <tr class="text-slate-400 border-b border-stroke">
+                <th class="py-2 px-2 text-left">型號（點擊切換）</th>
+                <th class="py-2 px-2 text-right">容量</th>
+                <th class="py-2 px-2 text-right">連續負載</th>
+                <th class="py-2 px-2 text-right">預估時間 (${w}W)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="bg-field/70"><td colspan="4" class="py-1.5 px-2 text-[11px] font-bold text-cyber tracking-wider">MD 系列（支援 Type-C PD 快充）</td></tr>
+              ${buildRows(mdRows)}
+              <tr class="bg-field/70"><td colspan="4" class="py-1.5 px-2 text-[11px] font-bold text-slate-300 tracking-wider">AC / UPS 系列</td></tr>
+              ${buildRows(acRows)}
+            </tbody>
+          </table>
+        </div>
+      `;
     }
 
-    function calculate(){
-      const id=modelSel.value; const spec=SPECS[id];
-      if(!spec){ alert('請先選擇型號'); return; }
-      
-      const wh=spec.cap; const w=parseFloat(powerInput.value);
-      if(isNaN(w)){ alert(' 請輸入數字！'); return; }
-      if(checkLimit()) return;
-      if(w<=0){ resultDiv.textContent=' 請輸入正確數值'; return; }
+    function calculate() {
+      const id = document.getElementById('model').value;
+      const spec = SPECS[id];
+      const powerInput = document.getElementById('power').value;
+      const w = parseFloat(powerInput);
+      const resultBox = document.getElementById('resultBox');
 
-      const hours=(wh*0.8)/w; const hr=Math.floor(hours); const min=Math.round((hours-hr)*60);
-      resultDiv.innerHTML=` 預估可使用時間：<strong>${hr} 小時 ${String(min).padStart(2,'0')} 分</strong><br/><span class="highlight">本型號連續使用負載：${spec.max}W</span>`;
+      if (!powerInput || isNaN(w) || w <= 0) {
+        checkLimit(0);
+        renderComparison(0);
+        resultBox.innerHTML = '<div class="text-sm text-slate-400 text-center py-2">請輸入大於 0 的電器功率 (W) 進行試算</div>';
+        return;
+      }
+
+      const isOverload = checkLimit(w);
+      renderComparison(w);
+
+      if (isOverload) {
+        resultBox.innerHTML = `
+          <div class="text-center space-y-1 py-1">
+            <div class="text-sm font-bold text-warn">目前設定的 ${w}W 超過 ${spec.name} 連續使用負載（${spec.max}W）</div>
+            <div class="text-xs text-slate-400">為確保設備安全，不建議在此負載下連續使用，請參考上方推薦機型。</div>
+          </div>
+        `;
+        return;
+      }
+
+      const d = formatDuration(spec.wh, w);
+      resultBox.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <div class="text-xs text-slate-400">預估可使用時間（${spec.name} @ ${w}W）：</div>
+            <div class="text-2xl sm:text-3xl font-black text-cyber font-mono tracking-tight mt-0.5">${d.text}</div>
+          </div>
+          <div class="sm:text-right space-y-0.5">
+            <div class="text-xs font-bold text-highlight">連續使用負載：${spec.max}W</div>
+            <div class="text-[11px] text-slate-400 font-mono">最大輸出：${spec.peak}W · 轉換係數 0.8</div>
+          </div>
+        </div>
+      `;
     }
 
-    function resetForm(){
-      modelSel.selectedIndex=0; 
-      powerInput.value=''; 
-      document.getElementById('specDemo').style.display='none';
-      syncSpec();
+    function handlePowerInput() {
+      calculate();
     }
 
-    modelSel.addEventListener('change', syncSpec);
-    powerInput.addEventListener('input', checkLimit);
-    document.addEventListener('DOMContentLoaded', syncSpec);
-    
-    syncSpec();
+    function onModelChange() {
+      renderSpecBox();
+      calculate();
+    }
 
-    (function setupAccordion(){
-      const accordions=document.querySelectorAll('details.accordion');
-      const adjustWhenOpen = (dtl, panel) => {
-        if (!dtl.open) return;
-        if (panel.style.maxHeight !== 'none') {
-          panel.style.maxHeight = panel.scrollHeight + 'px';
-        }
-        const rect = panel.getBoundingClientRect();
-        const overflow = rect.bottom - (window.innerHeight - 12);
-        if (overflow > 0) {
-          window.scrollBy({ top: overflow, left: 0, behavior: 'smooth' });
-        }
-      };
+    function selectModel(id) {
+      document.getElementById('model').value = id;
+      onModelChange();
+    }
 
-      accordions.forEach(dtl=>{
-        const panel=dtl.querySelector('.panel');
-        if(!panel) return;
-        
-        panel.style.maxHeight='0px';
-        const onToggle=()=>{
-          if(dtl.open){
-            panel.style.maxHeight=panel.scrollHeight+'px';
-            const onEnd=()=>{
-              panel.style.maxHeight='none';
-              panel.removeEventListener('transitionend', onEnd);
-              adjustWhenOpen(dtl, panel);
-            };
-            panel.addEventListener('transitionend', onEnd);
-          }else{
-            if(panel.style.maxHeight==='none'){
-              panel.style.maxHeight=panel.scrollHeight+'px';
-              panel.getBoundingClientRect();
-            }
-            requestAnimationFrame(()=>{ panel.style.maxHeight='0px'; });
-          }
-        };
+    function applyPreset(watts) {
+      document.getElementById('power').value = watts;
+      calculate();
+    }
 
-        if(dtl.open){ panel.style.maxHeight='none'; }
-        dtl.addEventListener('toggle', onToggle);
+    function toggleSpecDemo() {
+      document.getElementById('specDemo').classList.toggle('hidden');
+    }
 
-        const recalc = ()=> adjustWhenOpen(dtl, panel);
-        window.addEventListener('resize', recalc);
-        window.addEventListener('orientationchange', recalc);
-        if (window.visualViewport) {
-          window.visualViewport.addEventListener('resize', recalc);
-        }
-      });
-    })();
+    function calcVA() {
+      const v = parseFloat(document.getElementById('vaVolt').value);
+      const a = parseFloat(document.getElementById('vaAmp').value);
+      if (!v || !a || v <= 0 || a <= 0) return;
+      const w = Math.round(v * a * 10) / 10;
+      document.getElementById('power').value = w;
+      calculate();
+    }
+
+    function resetForm() {
+      document.getElementById('model').value = 'MD80K';
+      document.getElementById('power').value = '';
+      document.getElementById('vaVolt').value = '';
+      document.getElementById('vaAmp').value = '';
+      document.getElementById('specDemo').classList.add('hidden');
+      document.getElementById('globalWarn').classList.add('hidden');
+      document.getElementById('limitWarn').classList.add('hidden');
+      renderSpecBox();
+      renderComparison(0);
+      document.getElementById('resultBox').innerHTML =
+        '<div class="text-sm text-slate-400 text-center py-2">請輸入電器功率 (W) 或點選上方常見電器進行試算</div>';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSpecBox();
+      if (window.lucide) lucide.createIcons();
+    });
   </script>
 </body>
 </html>
